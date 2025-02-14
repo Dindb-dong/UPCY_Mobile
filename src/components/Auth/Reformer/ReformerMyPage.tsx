@@ -35,6 +35,7 @@ import {
   getUserRole,
   removeAccessToken,
   removeMarketUUID,
+  removeNickname,
   removeRefreshToken,
   // setNickname,
   setUserRole,
@@ -328,6 +329,8 @@ export const ReformerMyPageScreen = ({
         console.log('로그아웃 합니다.');
         removeAccessToken();
         removeRefreshToken();
+        removeMarketUUID();
+        removeNickname();
         setLogin(false);
         setUserRole('customer');
         console.log('유저롤:', role);

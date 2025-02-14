@@ -50,6 +50,7 @@ export function setNickname(nickname) {
 
 export function removeNickname() {
   removeSecureValue(nicknameKeyName);
+  console.log("nickname removed successfully");
 }
 
 export async function getAccessToken() {
@@ -64,6 +65,7 @@ export function setAccessToken(token) {
 
 export function removeAccessToken() {
   removeSecureValue(accessTokenKeyName);
+  console.log("accessToken removed successfully");
 }
 
 export async function getRefreshToken() {
@@ -78,6 +80,7 @@ export function setRefreshToken(token) {
 
 export function removeRefreshToken() {
   removeSecureValue(refreshTokenKeyName);
+  console.log("refreshToken removed successfully");
 }
 
 export async function getUserRole() {

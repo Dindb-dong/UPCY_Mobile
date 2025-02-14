@@ -42,9 +42,16 @@ const CustomHeader2 = ({ navigation }: CustomHeader2Props) => {
   const handleOnPress = () => {
     navigation.navigate('SearchPage');
   };
+
+  const removeInfo = async () => {
+    //TODO: 일반적 로그아웃이 아닌 경우 등으로 인해 앱에 정상적으로 접근 못할 시 
+    // 로고 누르면 액세스토큰같은거 싹 다 지우는 기능 만들기... 구분을 어떻게 하지?
+  }
   return (
     <FrameBox>
-      <Logo color="#612FEF" width={41.572} height={18} />
+      <TouchableOpacity onPress={removeInfo}>
+        <Logo color="#612FEF" width={41.572} height={18} />
+      </TouchableOpacity>
       <SearchContainer>
         <TouchableOpacity onPress={handleOnPress}>
           <SearchInput>
