@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { FlatList, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, View, Modal, Text } from 'react-native';
+import { FlatList, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, View, Modal, Text, Alert } from 'react-native';
 import styled from 'styled-components/native';
 import { getStatusBarHeight } from 'react-native-safearea-height';
-import { Body14R, Subtitle18B, Subtitle18M, Subtitle16B, Subtitle16M, Title20B } from '../../../styles/GlobalText';
+import { Body14R, Subtitle18B, Subtitle16M, Subtitle16B, Title20B } from '../../../styles/GlobalText';
 import { BLACK, LIGHTGRAY, PURPLE } from '../../../styles/GlobalColor';
 import Arrow from '../../../assets/common/Arrow.svg';
 import InputBox from '../../../common/InputBox';
 import BottomButton from '../../../common/BottomButton';
 import { StackScreenProps } from '@react-navigation/stack';
 import { OrderStackParams } from '../Order/OrderManagement';
+import Request from '../../../common/requests.js';
+import { getAccessToken } from '../../../common/storage.js';
 
 interface RejectionProps extends StackScreenProps<OrderStackParams, 'Rejection'> {
   onClose?: () => void;
@@ -16,6 +18,7 @@ interface RejectionProps extends StackScreenProps<OrderStackParams, 'Rejection'>
 
 const statusBarHeight = getStatusBarHeight(true);
 
+// 거절 사유 데이터
 const data = [
   { id: 1, text: "요청하신 리폼을 할 수 없는 소재" },
   { id: 2, text: "요청하신 리폼을 할 수 없는 원단 크기" },
@@ -25,22 +28,69 @@ const data = [
 ];
 
 const Rejection = ({ navigation, route, onClose }: RejectionProps) => {
+  const order = route.params?.order;
+  const orderUuid = order?.order_uuid;
+
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [customReason, setCustomReason] = useState<string>('');
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+
   const handlePress = (id: number) => {
     setSelectedId(id);
-  };
-
-  const handleConfirmRejection = () => {
-    setIsModalVisible(false);
-    navigation.navigate('SentRejection');
   };
 
   const handleCancel = () => {
     setIsModalVisible(false);
   };
 
+  // 🔹 서버로 주문 거절 요청 보내기
+  const handleConfirmRejection = async () => {
+    if (!orderUuid) {
+      Alert.alert('오류', '주문 UUID를 찾을 수 없습니다.');
+      return;
+    }
+
+    const selectedReasonText = data.find(item => item.id === selectedId)?.text || '';
+    const finalReason = selectedId === 5 ? customReason.trim() : selectedReasonText;
+
+    if (!selectedId || !finalReason) {
+      Alert.alert('오류', '거절 사유를 선택하거나 입력해 주세요.');
+      return;
+    }
+
+    try {
+      const request = Request();
+      const accessToken = await getAccessToken();
+
+      const url = `/api/orders/${orderUuid}/status`;
+      const payload = {
+        status: "rejected",
+        rejected_reason: finalReason,
+      };
+
+      console.log("보낼 데이터:", payload);
+          console.log("주문 상태:", payload.status);
+          console.log("거절 사유:", payload.rejected_reason);
+
+      const response = await request.patch(url, payload, {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      });
+
+      if (response && response.status === 200) {
+        Alert.alert('성공', '주문이 거절되었습니다.');
+        navigation.navigate('SentRejection');
+      } else {
+        console.error('거절 실패:', response.data);
+        Alert.alert('실패', '주문 거절 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('API 요청 오류:', error.response || error.message);
+      Alert.alert('에러', '서버 통신 중 오류가 발생했습니다.');
+    }
+
+    setIsModalVisible(false);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
@@ -59,26 +109,24 @@ const Rejection = ({ navigation, route, onClose }: RejectionProps) => {
             <FlatList
               data={data}
               style={{ height: 400 }}
-              renderItem={({ item }: any) => {
-                return (
-                  <TouchableOpacity
-                    style={{
-                      borderRadius: 8,
-                      borderColor: PURPLE,
-                      borderWidth: 1,
-                      backgroundColor: item.id === selectedId ? PURPLE : 'white',
-                      paddingHorizontal: 55,
-                      paddingVertical: 15,
-                      marginVertical: 5
-                    }}
-                    onPress={() => handlePress(item.id)}
-                  >
-                    <Subtitle16M style={{ color: item.id === selectedId ? 'white' : PURPLE, textAlign: 'center' }}>
-                      {item.text}
-                    </Subtitle16M>
-                  </TouchableOpacity>
-                );
-              }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={{
+                    borderRadius: 8,
+                    borderColor: PURPLE,
+                    borderWidth: 1,
+                    backgroundColor: item.id === selectedId ? PURPLE : 'white',
+                    paddingHorizontal: 55,
+                    paddingVertical: 15,
+                    marginVertical: 5
+                  }}
+                  onPress={() => handlePress(item.id)}
+                >
+                  <Subtitle16M style={{ color: item.id === selectedId ? 'white' : PURPLE, textAlign: 'center' }}>
+                    {item.text}
+                  </Subtitle16M>
+                </TouchableOpacity>
+              )}
               keyExtractor={item => item.id.toString()}
             />
 
@@ -97,6 +145,7 @@ const Rejection = ({ navigation, route, onClose }: RejectionProps) => {
         </View>
       </ScrollView>
 
+      {/* 모달: 거절 확인 */}
       <Modal transparent={true} visible={isModalVisible} onRequestClose={handleCancel}>
         <ModalContainer>
           <ModalBox>
@@ -122,13 +171,10 @@ const Rejection = ({ navigation, route, onClose }: RejectionProps) => {
         </ModalContainer>
       </Modal>
 
-
-
+      {/* 하단 버튼 */}
       <View style={{ position: 'absolute', width: '100%', bottom: 0, borderTopWidth: 8, borderColor: 'white', zIndex: 1, backgroundColor: 'white', paddingHorizontal: 10 }}>
         <View style={{ paddingHorizontal: 30, paddingVertical: 20 }}>
-          <BottomButton value='주문 거절하기' pressed={false}
-            onPress={() => setIsModalVisible(true)}
-          />
+          <BottomButton value='주문 거절하기' pressed={false} onPress={() => setIsModalVisible(true)} />
         </View>
       </View>
     </SafeAreaView>
@@ -195,6 +241,5 @@ const styles = StyleSheet.create({
     width: 10,
   },
 });
-
 
 export default Rejection;

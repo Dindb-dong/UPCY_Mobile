@@ -1,84 +1,28 @@
-import React, { useState } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, ImageBackground, Image, Modal, Alert, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, View, Text, TouchableOpacity, Image, Modal, Alert, StyleSheet } from 'react-native';
 import styled from 'styled-components/native';
-import { StackScreenProps } from '@react-navigation/stack';
-import Arrow from '../../../assets/common/Arrow.svg';
-import BottomButton from '../../../common/BottomButton';
-import Carousel from '../../../common/Carousel';
-import { BLACK, PURPLE, GREEN } from '../../../styles/GlobalColor';
-import { Body14R, Body14B, Body16M, Caption11M, Caption12M, Caption14M, Filter14M, Subtitle18B, Subtitle16B, Subtitle16M, Subtitle18M, Title20B } from '../../../styles/GlobalText';
-import { OrderStackParams } from '../Order/OrderManagement';
 import { getStatusBarHeight } from 'react-native-safearea-height';
-import Request from '../../../common/requests.js';
-import { getAccessToken } from '../../../common/storage.js';
+import { StackScreenProps } from '@react-navigation/stack';
 
+import Arrow from '../../../assets/common/Arrow.svg';
+import { BLACK, GREEN, PURPLE } from '../../../styles/GlobalColor';
+import { Body14R, Body14B, Body16M, Caption11M, Caption12M, Caption14M, Filter14M, Subtitle18B, Subtitle16B, Subtitle16M, Subtitle18M, Title20B } from '../../../styles/GlobalText';
+
+
+import { OrderStackParams } from '../Order/OrderManagement';
 
 const statusBarHeight = getStatusBarHeight(true);
 
-const QuotationConfirm = ({ navigation, route }: StackScreenProps<OrderStackParams, 'QuotationConfirm'>) => {
+const QuotationReview = ({ navigation, route }: StackScreenProps<OrderStackParams, 'QuotationReview'>) => {
   const order = route.params?.order;
 
-  console.log("Route Params:", route.params); // route.params가 정상적으로 전달되는지 확인
-
-
   if (!order) {
-    console.error('QuotationConfirm: order 데이터가 전달되지 않았습니다.', route.params);
+    console.error('QuotationReview: order 데이터가 전달되지 않았습니다.', route.params);
     Alert.alert('오류', '주문 정보를 불러올 수 없습니다.');
     return null;
   }
 
-const handleSendQuotation = async () => {
-  try {
-    const request = Request();
-    const accessToken = await getAccessToken();
-
-    // 주문 UUID 가져오기
-    const orderUuid = order?.order_uuid;
-    if (!orderUuid) {
-      Alert.alert('오류', '주문 UUID가 존재하지 않습니다.');
-      return;
-    }
-
-    // API 요청 URL
-    const url = `/api/orders/${orderUuid}/status`;
-    console.log("API 요청 URL:", url);
-
-    // 🔹 서버가 기대하는 올바른 데이터 형식으로 전송
-    const data = {status: "accepted" };
-    console.log("보낼 데이터:" , data);
-    if (!data) {
-      console.error("🚨 오류: `data` 객체가 `undefined`입니다.");
-      return;
-    }
-    // API 호출
-    const response = await request.patch(url, data, {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-
-    });
-
-
-    console.log("API 응답:", response.data); // 서버 응답 로그
-
-    if (response && response.status === 200) {
-      Alert.alert('성공', '주문이 수락되었습니다.');
-      navigation.navigate('OrderManagementTabs');
-    } else {
-      console.error('Error:', response.data);
-      Alert.alert('실패', '주문 수락 중 오류가 발생했습니다.');
-    }
-  } catch (error) {
-    console.error('API 요청 오류:', error.response || error.message);
-    Alert.alert('에러', '서버와 통신 중 오류가 발생했습니다.');
-  }
-};
-
-
-  const handleSendRejection = () => {
-
-    navigation.navigate('Rejection', {order});
-  };
-
+//데이터 변환: order 데이터를 QuotationPage 구조로 변환
 // 주문서 이미지 (order)
 const orderImages = order.images
   ?.filter(img => img.image_type === "order")
@@ -316,13 +260,6 @@ const options = order.additional_options?.map(option => ({
             </View>
           </View>
 
-
-      <View style={{ padding: 10, marginVertical: 30 }}>
-        <BottomButton value="수락 하기" onPress={handleSendQuotation} pressed={true} />
-        <View style={{ marginVertical: 5 }} />
-        <BottomButton value="거절 하기" onPress={handleSendRejection} pressed={true} color={GREEN} />
-      </View>
-
                     {/* 전체보기 모달 */}
                   <Modal visible={modalVisible} transparent={true}>
                     <View style={styles.modalBackground}>
@@ -355,9 +292,7 @@ const options = order.additional_options?.map(option => ({
   );
 };
 
-
-
-
+//스타일 정의
 const BackButton = styled.TouchableOpacity`
   padding: 10px;
   position: absolute;
@@ -441,8 +376,8 @@ const styles = StyleSheet.create({
       width: 70,
       height: 70,
       borderRadius: 5,
-      backgroundColor: '#f0f0f0',
+      backgroundColor: '#f0f0f0', // 이미지가 없을 때 회색 배경
     }
 });
 
-export default QuotationConfirm;
+export default QuotationReview;

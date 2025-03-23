@@ -154,7 +154,6 @@ export default function Request() {
       const response = await axios.patch(url, data, {
         headers: {
           Authorization: headerValue,
-          params:params,
           ...headers,
           
         },

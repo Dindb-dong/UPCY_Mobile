@@ -1,58 +1,106 @@
-import React from 'react';
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { SafeAreaView, FlatList, ActivityIndicator, Alert, Text, TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
-import { Body14R, Subtitle16B, } from '../../../styles/GlobalText';
-import { LIGHTGRAY } from '../../../styles/GlobalColor.tsx';
+import { useFocusEffect } from '@react-navigation/native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { OrderStackParams } from './OrderManagement.tsx';
+import Request from '../../../common/requests';
+import { getAccessToken } from '../../../common/storage.js';
 
-type OrderInfoType = {
-  id: string;
-  name: string;
-  customer: string;
-  orderDate: string;
-  is_online: boolean;
-  image: string;
-};
-
-const newOrders = [
-  // Sample data for "새 주문"
-  { title: '내 옷을 반려동물 옷으로', price: '25000원', customer: '전예영', orderDate: '2024-05-22', is_online: false, image: 'https://m.lovecoco.co.kr/web/product/big/201911/55d890a77de72b7213b84fec2083e3fe.jpg' },
-  { title: '데님으로 만드는 숄더백', price: '28000원', customer: '전예영', orderDate: '2024-05-22', is_online: false, image: 'https://image.production.fruitsfamily.com/public/product/resized@width620/t6RDVV2b6--1703933039055.png' },
-];
-
+interface OrderInfoType {
+  order_uuid: string;
+  service_info: {
+    service_title: string;
+    basic_price: number;
+  };
+  orderer_information: {
+    orderer_name: string;
+  };
+  order_date: string;
+  transaction: {
+    transaction_option: string;
+  };
+  images: { image_type: string; image: string }[];
+}
 
 const NewOrders = ({ navigation, route }: StackScreenProps<OrderStackParams, 'NewOrders'>) => {
+  const [orders, setOrders] = useState<OrderInfoType[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const request = Request();
+
+  // API 호출: reformer 주문 목록 불러오기
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        Alert.alert('❌ 오류', '로그인이 필요합니다.');
+        return;
+      }
+
+      const response = await request.get('/api/orders?type=reformer&status=pending', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (response.status === 200 && Array.isArray(response.data)) {
+        setOrders(response.data);
+        console.log('✅ 주문 목록:', response.data);
+      } else {
+        Alert.alert('❌ 주문 목록을 불러오지 못했습니다.');
+      }
+    } catch (error) {
+      console.error('❌ 주문 목록 API 호출 실패:', error);
+      Alert.alert('❌ 주문 데이터를 가져오는 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 화면 포커스 시 주문 목록 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrders();
+    }, [])
+  );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: LIGHTGRAY }}>
-      <ScrollView>
-        {newOrders.length > 0 ? (
-          newOrders.map(order => (
-            <OrderInfoBox key={order.orderDate}>
-              <TopSection>
-                <OrderDate>{order.orderDate}</OrderDate>
-                <ContentRow>
-                  <ImageContainer source={{ uri: order.image }} />
-                  <TextContainer>
-                    <Subtitle16B>{order.title}</Subtitle16B>
-                    <Body14R>예상 결제 금액: {order.price}</Body14R>
-                    <Body14R>주문자: {order.customer}</Body14R>
-                    <Body14R>거래 방식: {order.is_online ? '비대면' : '대면'}</Body14R>
-                  </TextContainer>
-                </ContentRow>
-              </TopSection>
-              <BottomSection>
-                <TouchableOpacity onPress={() => navigation.navigate('QuotationConfirm')}>
-                  <CheckOrderText>주문서 확인</CheckOrderText>
-                </TouchableOpacity>
-              </BottomSection>
-            </OrderInfoBox>
-          ))
-        ) : (
-          <Text>새 주문이 없습니다.</Text>
-        )}
-      </ScrollView>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+      {loading ? (
+        <ActivityIndicator size="large" color="#6200EE" style={{ marginTop: 20 }} />
+      ) : orders.length > 0 ? (
+        <FlatList
+          data={orders}
+          keyExtractor={(item) => item.order_uuid}
+          renderItem={({ item: order }) => {
+            const orderImage = order.images?.find(img => img.image_type === "order")?.image || '';
+            return (
+              <OrderInfoBox>
+                <TopSection>
+                  <OrderDate>{order.order_date}</OrderDate>
+                  <ContentRow>
+                    <ImageContainer source={{ uri: orderImage }} />
+                    <TextContainer>
+                      <Title>{order.service_info.service_title || '서비스명 없음'}</Title>
+                      <OrderText>예상 결제 금액: {order.service_info.basic_price.toLocaleString()}원</OrderText>
+                      <OrderText>주문자: {order.orderer_information.orderer_name || '익명'}</OrderText>
+                      <OrderText>거래 방식: {order.transaction.transaction_option === '비대면' ? '비대면' : '대면'}</OrderText>
+                    </TextContainer>
+                  </ContentRow>
+                </TopSection>
+                <BottomSection>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('QuotationConfirm', { order })}
+                  >
+                    <ConfirmText>주문서 확인</ConfirmText>
+                  </TouchableOpacity>
+                </BottomSection>
+              </OrderInfoBox>
+            );
+          }}
+        />
+      ) : (
+        <Text style={{ textAlign: 'center', marginTop: 20 }}>새 주문이 없습니다.</Text>
+      )}
     </SafeAreaView>
   );
 };
@@ -101,9 +149,20 @@ const TextContainer = styled.View`
   justify-content: center;
 `;
 
-const CheckOrderText = styled.Text`
+const Title = styled.Text`
   font-size: 16px;
-  color: #000;
+  font-weight: bold;
+`;
+
+const OrderText = styled.Text`
+  font-size: 14px;
+  color: #333;
+`;
+
+const ConfirmText = styled.Text`
+  font-size: 16px;
+  color: #6200EE;
+  font-weight: bold;
 `;
 
 export default NewOrders;

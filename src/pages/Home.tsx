@@ -19,6 +19,7 @@ import QuotationPage, {
   QuotationProps,
 } from '../components/Home/Quotation/QuotationPage';
 import SentQuotation from '../components/Home/Quotation/SentQuotation';
+import QuotationReview from '../components/Home/Quotation/QuotationReview';
 import ServiceRegistrationPage from '../components/Home/Market/ServiceRegistration';
 import ServiceDetailPageScreen from '../components/Home/Market/ServiceDetailPage';
 import GoodsDetailPageScreen from '../components/Home/Market/GoodsDetailPage';
@@ -152,6 +153,7 @@ const HomeScreen = ({
       {/* <HomeStack.Screen name="WriteDetailPage" component={WriteDetailPage} /> */}
       <HomeStack.Screen name="AddPortfolio" component={AddPortfolio} />
       <HomeStack.Screen name="InputInfo" component={InputInfo} />
+      <HomeStack.Screen name="QuotationReview" component={QuotationReview} />
       {/* <HomeStack.Screen name="TestComponents" component={ComponentsTest} /> */}
       <HomeStack.Screen name="ReformerMarket" component={ReformerMarket} />
       <HomeStack.Screen name="SearchPage" component={SearchPage} />

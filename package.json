@@ -18,6 +18,7 @@
     "@babel/plugin-transform-shorthand-properties": "^7.0.0-0",
     "@babel/plugin-transform-template-literals": "^7.0.0-0",
     "@gorhom/bottom-sheet": "^4.6.1",
+    "@react-native-async-storage/async-storage": "^2.1.1",
     "@react-native-community/checkbox": "^0.5.17",
     "@react-native-community/slider": "^4.5.0",
     "@react-native-picker/picker": "^2.8.1",

@@ -38,36 +38,6 @@ const GlobalTheme = {
   },
 };
 
-function App(): React.JSX.Element {
-  const [isSplashFinished, setIsSplashFinished] = useState(false);
-
-  const finishSplash = () => {
-    console.log('finished');
-    setIsSplashFinished(true);
-  };
-
-  return (
-    <BottomBarProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <LoginProvider>
-          <NavigationContainer theme={GlobalTheme}>
-            {!isSplashFinished ? (
-              <SplashScreen onFinish={finishSplash} />
-            ) : (
-              <UserProvider>
-                <AppStack.Navigator screenOptions={{ headerShown: false }}>
-                  <AppStack.Screen name="Main" component={MainTabNavigator} />
-                  <AppStack.Screen name="Signin" component={SignIn} />
-                </AppStack.Navigator>
-              </UserProvider>
-            )}
-          </NavigationContainer>
-        </LoginProvider>
-      </GestureHandlerRootView>
-    </BottomBarProvider>
-  );
-}
-
 export type TabProps = {
   UPCY: undefined;
   MY: undefined;
@@ -184,5 +154,37 @@ const MainTabNavigator = () => {
     </Tab.Navigator>
   );
 };
+
+
+function App(): React.JSX.Element {
+  const [isSplashFinished, setIsSplashFinished] = useState(false);
+
+  const finishSplash = () => {
+    console.log('finished');
+    setIsSplashFinished(true);
+  };
+
+  return (
+    <BottomBarProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <LoginProvider>
+          <NavigationContainer theme={GlobalTheme}>
+            {!isSplashFinished ? (
+              <SplashScreen onFinish={finishSplash} />
+            ) : (
+              <UserProvider>
+                <AppStack.Navigator screenOptions={{ headerShown: false }}>
+                  <AppStack.Screen name="Main" component={MainTabNavigator} />
+                  <AppStack.Screen name="Signin" component={SignIn} />
+                </AppStack.Navigator>
+              </UserProvider>
+            )}
+          </NavigationContainer>
+        </LoginProvider>
+      </GestureHandlerRootView>
+    </BottomBarProvider>
+  );
+}
+
 
 export default App;

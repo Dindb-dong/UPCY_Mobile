@@ -34,12 +34,14 @@ import Login from '../../../components/Auth/Login';
 
 import Request from '../../../common/requests';
 import OrderPage from '../../../components/Home/Order/OrderPage';
+import OrderManagement from '../../../components/Home/Order/OrderManagement';
 import { CommonActions, useFocusEffect } from '@react-navigation/native';
 import { print } from '@gorhom/bottom-sheet/lib/typescript/utilities/logger';
 import { TabProps } from '../../../../App';
 import { PhotoType } from '../../../hooks/useImagePicker';
 import { MyPageStackParams, MypageStackProps } from '../../../pages/MyPage';
 import DeleteModal from '../DeleteModal';
+import { OrderStackParams } from '../Order/OrderManagement';
 
 export const UpcyerMyPageMainScreen = ({ navigation, route }: MypageStackProps) => {
   const ProfileSection = ({
@@ -128,6 +130,9 @@ export const UpcyerMyPageMainScreen = ({ navigation, route }: MypageStackProps) 
       setUserInfo(route.params.userInfo);
     }
   }, [route.params?.userInfo]);
+    useEffect(() => {
+  console.log(JSON.stringify(navigation.getState(), null, 2));
+}, [navigation]);
 
   const getProfile = async () => {
     // 유저 프로필 가져오기-> setUserInfo로 관리
@@ -337,8 +342,8 @@ export const UpcyerMyPageMainScreen = ({ navigation, route }: MypageStackProps) 
           />
         )}>
         {routes.map(route_ => (
-          (<Tabs.Tab key={route_.key} name={route_.title}>
-            {route_.key === 'order' && <OrderPage flatListRef={flatListRef} navigation={navigation} route={route} />}
+          <Tabs.Tab key={route_.key} name={route_.title}>
+            {route_.key === 'order' && <OrderPage />}
             {/* {route.key === 'like' &&
                  <View>
                      <ReviewPage flatListRef={flatListRef} />
@@ -346,7 +351,7 @@ export const UpcyerMyPageMainScreen = ({ navigation, route }: MypageStackProps) 
                      </View>}
                  </View>} */}
           </Tabs.Tab>)
-        ))}
+        )}
       </Tabs.Container>
       <DeleteModal
         visible={modalVisible}

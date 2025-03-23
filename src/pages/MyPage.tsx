@@ -19,6 +19,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Body16B } from '../styles/GlobalText.tsx';
 import BottomButton from '../common/BottomButton.tsx';
 import TempStorageEdit from '../components/Home/Market/TempStorageEdit.tsx';
+import CompletedOrderPop from '../components/Home/Order/CompletedOrderPop.tsx';
+import QuotationPage from '../components/Home/Quotation/QuotationPage.tsx';
 
 export type MyPageStackParams = {
   MyPage: { userInfo?: any | undefined };
@@ -89,6 +91,18 @@ const MyPageScreen = ({
         component={Login}
         options={{ headerShown: false }}
       />
+      <MyPageStack.Screen
+        name="CompletedOrderPop"
+        component={CompletedOrderPop}
+        options={{ headerShown: false }}
+      />
+
+      <MyPageStack.Screen
+        name="QuotationPage"
+        component={QuotationPage}
+        options={{ headerShown: false }}
+      />
+
     </MyPageStack.Navigator>
   );
 };

@@ -1,62 +1,22 @@
-import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, Image, View } from 'react-native';
+import React, { useState , useEffect, useCallback} from 'react';
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, Image, View, ActivityIndicator } from 'react-native';
 import styled from 'styled-components/native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Body14R, Subtitle16B } from '../../../styles/GlobalText';
 import { PURPLE, LIGHTGRAY } from '../../../styles/GlobalColor.tsx';
-import { useNavigation } from '@react-navigation/native';
-// 주문관리 탭에서, 상단의 3번째 탭 (완료/취소 탭)
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import Request from '../../../common/requests';
+import { getAccessToken } from '../../../common/storage'
 
-const completedOrders = [
-  {
-    id: '02902',
-    title: '내 옷을 반려동물 옷으로',
-    price: '25000원',
-    customer: '전예영',
-    completedDate: '2024-05-22',
-    image: 'https://m.lovecoco.co.kr/web/product/big/201911/55d890a77de72b7213b84fec2083e3fe.jpg',
-    status: '거절한 주문',
-    is_completed: false,
-  },
 
-  {
-    id: '29821',
-    title: '데님으로 만드는 숄더백',
-    price: '25000원',
-    customer: '홍길동',
-    completedDate: '2024-05-20',
-    image: 'https://image.production.fruitsfamily.com/public/product/resized@width620/t6RDVV2b6--1703933039055.png',
-    status: '거래 완료',
-    is_completed: true,
-  },
-
-  {
-    id: '39202',
-    title: '평범했던 패딩, 퀼팅 백으로',
-    price: '32000원',
-    customer: '오민영',
-    completedDate: '2024-05-15',
-    image: 'https://image.yes24.com/goods/118500067/XL',
-    status: '거래 완료',
-    is_completed: true,
-  },
-
-  {
-    id: '21292',
-    title: '청바지 에코백 서비스',
-    price: '25000원',
-    customer: '권수현',
-    completedDate: '2024-05-15',
-    image: 'https://m.lovecoco.co.kr/web/product/big/201911/55d890a77de72b7213b84fec2083e3fe.jpg',
-    status: '중단된 주문',
-    is_completed: false,
-  },
-];
 
 const CompletedOrders = () => {
   const navigation = useNavigation();
   const [filter, setFilter] = useState('all'); //초기 필터값 all
   const [open, setOpen] = useState(false); //dropdown 열림 상태
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [items, setItems] = useState([
     { label: '전체', value: 'all' },
     { label: '거래 완료', value: 'completed' },
@@ -64,14 +24,60 @@ const CompletedOrders = () => {
     { label: '중단된 주문', value: 'suspended' },
   ]);
 
+
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        Alert.alert('❌ 오류', '로그인이 필요합니다.');
+        return;
+      }
+
+      const statuses = ['end', 'rejected'];
+      const request = Request();
+
+      const requests = statuses.map(status =>
+        request.get(`/api/orders?type=reformer&status=${status}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }).catch(err => {
+          console.error(`❌ ${status} 주문 조회 실패`, err.response?.data || err.message);
+          return null;
+        })
+      );
+
+      const responses = await Promise.all(requests);
+
+      const allOrders = responses
+        .filter(res => res && res.status === 200 && Array.isArray(res.data))
+        .flatMap(res => res.data);
+
+      console.log('📦 완료/거절 주문:', allOrders);
+
+      setOrders(allOrders);
+    } catch (error) {
+      console.error('❌ 주문 데이터 조회 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 페이지 포커스 시마다 데이터 fetch
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrders();
+    }, [])
+  );
+
   // 필터링된 데이터
-  const filteredOrders = completedOrders.filter((order) => {
-    if (filter === 'all') return true;
-    if (filter === 'completed') return order.is_completed;
-    if (filter === 'rejected') return order.status === '거절한 주문';
-    if (filter === 'suspended') return order.status === '중단된 주문';
-    return false;
-  });
+    const filteredOrders = orders.filter((order: any) => {
+      if (filter === 'all') return true;
+      if (filter === 'completed') return order.order_status?.[0]?.status === 'end';
+      if (filter === 'rejected') return order.order_status?.[0]?.status === 'rejected';
+      if (filter === 'suspended') return order.order_status?.[0]?.status === 'suspended';
+      return false;
+    });
 
 
 
@@ -121,33 +127,39 @@ const CompletedOrders = () => {
 
       {/* orderinfobox 영역 */}
       <View style={{ zIndex: 1 }}>
-        {completedOrders.length > 0 ? (
-          filteredOrders.map((order, index) => (
-            <OrderInfoBox key={order.id}>
+        {loading ? (
+          <ActivityIndicator size="large" color={PURPLE} style={{ marginTop: 20 }} />
+        ) : filteredOrders.length > 0 ? (
+          filteredOrders.map((order: any) => (
+            <OrderInfoBox key={order.order_uuid}>
               <TopSection>
                 <TopRow>
-                  <OrderDate> {order.is_completed ? `완료일: ${order.completedDate}` : `취소일: ${order.completedDate}`}</OrderDate>
-                  <OrderStatus status={order.status}>{order.status}</OrderStatus>
+                  <OrderDate>
+                  {order.order_date}
+                  </OrderDate>
+                  <OrderStatus status={order.status}>
+                        {order.order_status?.[0]?.status === 'end' ? '거래 완료' : '거절한 주문'}
+                  </OrderStatus>
                 </TopRow>
                 <ContentRow>
-                  <ImageContainer source={{ uri: order.image }} />
+                  <ImageContainer source={{ uri: order.images?.[0]?.image || '' }} />
                   <TextContainer>
-                    <Subtitle16B>{order.title}</Subtitle16B>
-                    <Body14R>결제 금액: {order.price}</Body14R>
-                    <Body14R>주문자: {order.customer}</Body14R>
-                    <Body14R>주문 번호: {order.id}</Body14R>
+                    <Subtitle16B>{order.service_info?.service_title || '제목 없음'}</Subtitle16B>
+                    <Body14R>결제 금액: {order.total_price?.toLocaleString() || '0'}원</Body14R>
+                    <Body14R>주문자: {order.orderer_information?.orderer_name || '익명'}</Body14R>
+                    <Body14R>주문 번호: {order.order_uuid}</Body14R>
                   </TextContainer>
                 </ContentRow>
               </TopSection>
               <BottomSection>
-                <TouchableOpacity onPress={() => navigation.navigate('QuotationPage')}>
+                <TouchableOpacity onPress={() => navigation.navigate('QuotationReview', { order })}>
                   <CheckOrderText>주문서 확인</CheckOrderText>
                 </TouchableOpacity>
               </BottomSection>
             </OrderInfoBox>
           ))
         ) : (
-          <Text>새 주문이 없습니다.</Text>
+          <Text style={{ margin: 20 }}>표시할 주문이 없습니다.</Text>
         )}
       </View>
     </SafeAreaView>

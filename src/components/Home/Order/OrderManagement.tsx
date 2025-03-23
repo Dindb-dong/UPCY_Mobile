@@ -19,6 +19,10 @@ import Rejection from '../Quotation/Rejection.tsx';
 import SentRejection from '../Quotation/SentRejection.tsx';
 import NewOrders from './NewOrders.tsx';
 import QuotationForm from '../Quotation/QuotationForm.tsx';
+import QuotationReview from '../Quotation/QuotationReview.tsx';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { LoginContext } from '../../../common/Context';
+import { getUserRole } from '../../../common/storage';
 
 // type OrderInfoType = {
 //   id: string;
@@ -33,6 +37,7 @@ export type OrderProps = {
   navigation: any;
   route: any;
   flatListRef?: React.RefObject<FlatList<any>>;
+  QuotationReview: {order:any};
 }
 
 export type OrderStackParams = {
@@ -47,9 +52,10 @@ export type OrderStackParams = {
   SentQuotation: undefined;
   WriteReviewPage: undefined;
   InputInfo: InputInfoProps;
-  QuotationConfirm: undefined;
+  QuotationConfirm: QuotationProps;
   Rejection: undefined;
   SentRejection: undefined;
+  QuotationReview: QuotationProps;
 }
 
 const OrderStack = createStackNavigator<OrderStackParams>();
@@ -71,7 +77,7 @@ const OrderStack = createStackNavigator<OrderStackParams>();
 // }
 
 const OrderManagement = ({
-  // navigation, route 
+  // navigation, route
 }: BottomTabScreenProps<TabProps, '주문관리'>) => {
 
   return (
@@ -109,6 +115,7 @@ const OrderManagement = ({
         <OrderStack.Screen name="QuotationConfirm" component={QuotationConfirm} />
         <OrderStack.Screen name="Rejection" component={Rejection} />
         <OrderStack.Screen name="SentRejection" component={SentRejection} />
+        <OrderStack.Screen name="QuotationReview" component={QuotationReview} />
 
       </OrderStack.Navigator>
     </SafeAreaView>
